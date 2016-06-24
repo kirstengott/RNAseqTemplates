@@ -1,0 +1,262 @@
+---
+title: "Untitled" 
+author: "Kirsten Gotting"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: cerulean
+---
+
+
+
+
+```{r initializeData, echo = FALSE, results = "hide", message = FALSE, error = FALSE, warning = FALSE}
+
+
+## user input to 'DESeq2All.Rdata'
+args <- ''
+load(args)
+
+setwd(workingdir)
+
+
+## First list the R libraries I want to use
+libraries        <- c('ggplot2', "DESeq2", "matrixStats", "gplots", "RColorBrewer", "parallel", "lattice", "plyr", "gtools", "dplyr", 'tidyr', 'kirsten', 'knitr')
+
+
+## Now read in the libraries
+lapply(libraries, function(x){
+    print(x)
+    library(x, character.only = TRUE, quietly = TRUE)
+    })
+
+
+## Initialize knitr options
+opts_chunk$set(echo=FALSE, message=FALSE, results="hide", fig.keep="all", warning=FALSE, error=FALSE, fig.path="figures/")
+opts_knit$set(root.dir = workingdir)
+
+
+```
+
+
+
+
+## Overview
+
+
+
+
+
+
+Working Directory:`r getwd()`
+
+
+##Spearman Correlation
+
+
+
+The Spearman correlation of the RPM (reads per million) for all genes that have an average RPM &#8805; 1. 
+
+```{r spearman_correlation, fig.cap = ""}
+
+## Make a spearman plot
+
+
+filteredRPMs <- normCounts %>% group_by(ID) %>% mutate(rpmFlag = ifelse((mean(rpm) >= 1), yes = 'yes', no = 'no')) %>% ungroup() %>%
+    filter(rpmFlag == 'yes') %>% select(ID, Sample, rpm) %>% spread(Sample, rpm)
+
+
+
+rpmfilt        <- data.frame(select(filteredRPMs, -ID), row.names = filteredRPMs$ID, check.names = FALSE)
+spearman       <- data.frame(cor(rpmfilt, method = 'spearman'), check.names = FALSE)
+spearman$ID    <- rownames(spearman)
+spearmanTidy   <- spearman %>% gather(Sample, correlation, -ID)
+
+## and plot it!
+
+ggplot(data = spearmanTidy, aes(x = ID, y = Sample, fill = correlation)) + geom_tile() +
+    scale_fill_gradient2(low = "yellow", mid = 'white', high = "purple4", midpoint = 0.8, limit = c(0,1)) +
+        ggtitle('Spearman Correlation of Samples') + xlab('') + ylab('') +
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+##PCA plots
+
+Principle Component Analysis on the log transformation of the count data.
+
+```{r PCA_plots,  fig.keep = "all", dev = "png"}
+
+## make a PCA with all of the samples
+
+PlotPCA(rld, title = 'All Samples PCA')
+
+## print the individual PCA plots
+
+individ.pcas <- lapply(contrast_names, function(x){
+    PlotPCA(rld_all[[x]], title = x)
+})
+
+print(individ.pcas)
+
+```
+
+##MA plots
+
+
+
+The log2 fold change(M) plotted against the log2 average(A) of the normalized read count for each gene.  Significantly differentially expressed genes are plotted in red.
+
+```{r MA_plots, fig.keep = "all", dev = "png"}
+
+
+MA.plots <- lapply(contrast_names, function(x){
+    df      <- all_results_tidyDF %>% filter(contrastID == x) %>% spread(dea_ID, dea_Value)
+    title   <- x
+    pval    <- as.numeric(pval)
+    if(is.null(df)){
+        message(paste0("Pvalue too stringent for ", contrast, ". MA plot ommited.\n"))
+    } else {
+        ma.plot <- makeMAplot(df, title, pval)
+        invisible(ma.plot)
+    }
+})
+
+print(MA.plots)
+
+
+```
+
+
+
+##Volcano Plots
+
+
+The log2 fold change(M) plotted against the -log10 (eg. 1e^-10 = 10) of the adjusted p-value.
+
+```{r Volcano_plots, fig.keep = "all", dev = "png"}
+
+
+volcano.plots <- mclapply(contrast_names, function(x){
+    df      <- all_results_tidyDF %>% filter(contrastID == x) %>% spread(dea_ID, dea_Value)
+    title   <- x
+    pval    <- as.numeric(pval)
+    if(is.null(df)){
+        message(paste0("Pvalue too stringent for ", contrast, ". Volcano plot ommited.\n"))
+    } else {
+        vol.plot <- makeVolcanoPlot(df, title, pval)
+        invisible(vol.plot)
+    }
+})
+
+print(volcano.plots)
+
+```
+
+
+##Heatmaps
+
+
+
+The first heatmap was made by hierarchically clustering the euclidean distances of the log2 fold change for genes with p-values less than `r pval` at any time point.
+
+The second heatmap uses the same hierarchical method to cluster timepoints.
+
+
+```{r Heatmaps, results = "hide", fig.cap = "", fig.keep = "high"}
+
+
+lfc_table <- all_results_tidyDF %>%
+    mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = 'yes', no = 'no')) %>% # label all significant genes
+        group_by(Gene) %>% mutate(num_sigGroup = length(which(significant == 'yes'))) %>% # label the # of times genes that are significant
+                ungroup() %>%
+                    filter(num_sigGroup > 0, dea_ID == 'log2FoldChange') %>% # pull out the fold change for genes significant at least 1 time
+                        select(-significant, -num_sigGroup) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
+                            spread(colname, dea_Value)
+
+
+
+
+## fix the log Fold Change table so it can be clustered
+
+heatmap.input.table           <- data.frame(lfc_table)
+rownames(heatmap.input.table) <- lfc_table$Gene
+heatmap.input.table$Gene      <- NULL
+heatmap.input.table           <- na.omit(data.matrix(heatmap.input.table))
+colnames(heatmap.input.table) <- contrast_names
+
+
+
+## Make two heatmaps
+
+hr <- hclust(dist(heatmap.input.table), method="complete") # Creates row dendrogram
+hc <- hclust(dist(t(heatmap.input.table)), method="complete") # Creates column dendrogram
+
+myclr     <- cutree(hr, k = 7) # set up where the groups will be, change 'k' for more or less groups
+mycolr    <- c("Green", "Red", "Blue", "Orange", "Purple", "Pink", "Yellow") # must be the same length as 'k'
+mycolr    <- mycolr[as.vector(myclr)] # pull out the colors assigned to each gene
+mycolr.df <- data.frame(Cluster_Color = mycolr, TranscriptID = names(myclr)) # create a data frame of the cluster color each gene belongs to
+
+
+
+if(ncol(heatmap.input.table) > 1){
+    ## Make a heatmap without a column dendrogram
+    prettycolors  <- colorRampPalette(rev(brewer.pal(11, "Spectral")))
+    col.breaks    <- seq(-3, 3, length.out = ncol(heatmap.input.table))
+    heatmap       <- heatmap.2(heatmap.input.table, margin = c(15,5), col = prettycolors, dendrogram = 'row', trace = c("none"), Rowv=as.dendrogram(hr), Colv = NA, labRow = FALSE, key = TRUE, breaks = col.breaks, key.ylab = "Gene Count", key.xlab = "log2FoldChange", cexCol = 1.5, RowSideColors = mycolr)
+    title(main = paste0("Clustering of ", nrow(heatmap.input.table)," Genes"), line = 0)
+    par(cex.main=0.9)
+}
+
+
+if(ncol(heatmap.input.table) > 2) {
+    k <- ifelse(ncol(heatmap.input.table < 5), 3, 5)
+    myclc  <- cutree(hc, k = k) # create groupings for the column dendrogram
+    mycolc <- c("Green", "Red", "Blue", "Orange", "Purple")
+    mycolc <- mycolc[as.vector(myclc)]
+    ## Make a heatmap of the logfold changes with column dendrogram.
+    prettycolors  <- colorRampPalette(rev(brewer.pal(11, "Spectral")))
+    col.breaks    <- seq(-3, 3, length.out = ncol(heatmap.input.table))
+    heatmap       <- heatmap.2(heatmap.input.table, margin = c(15,5), dendrogram = 'both', Rowv = as.dendrogram(hr), Colv = as.dendrogram(hc), col = prettycolors, trace = c("none"), labRow = FALSE, key = TRUE, breaks = col.breaks, main = paste0("Clustering of Timepoints on ", nrow(heatmap.input.table)," Genes"), key.ylab = "Gene Count", key.xlab = "log2FoldChange", cexCol = 1.5, , RowSideColors = mycolr, ColSideColors = mycolc)
+}
+
+```
+
+
+```{r make_tables}
+
+## create a table of significant genes with the cluster colors assigned
+
+sign.table <- all_results_tidyDF  %>% 
+  spread(key = dea_ID, value = dea_Value)  %>% 
+      filter(Gene %in% lfc_table$Gene) %>%
+          group_by(contrastID, Gene) %>% 
+              mutate(sortby = -log(padj, base = c(10))*sign(log2FoldChange)) %>% 
+                  ungroup() %>% gather(dea_ID, dea_Value, -Gene, -contrastID) %>% 
+                      unite(idAll, contrastID, dea_ID) %>% spread(key = idAll, value = dea_Value) %>%
+                          dplyr::rename('TranscriptID' = Gene) %>%
+                              left_join(mycolr.df)
+
+
+#Make a table that contains all of the genes in the results
+all.genes.table <- all_results_DF %>% dplyr::rename('TranscriptID' = Gene)
+
+
+WriteTable(file = paste0("./output/significant_genes.txt"), x = sign.table)    
+WriteTable(file = paste0("./output/all_genes_expression.txt"), x = all.genes.table)
+
+
+## save everything 
+save.image(file= paste0("./workspace_images/full_analysis.RData"))
+
+```
+
+## R-session information:
+
+```{r session.info, results = "asis"}
+capture.output(sessionInfo())
+
+```
