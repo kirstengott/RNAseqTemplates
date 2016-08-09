@@ -163,6 +163,9 @@ all_results_tidyDF <- bind_rows(all.results)
 all_results_DF     <- all_results_tidyDF %>% unite(ID_all, contrastID, dea_ID) %>% spread(key = ID_all, value = dea_Value)
 
 
+WriteTable(x = all_results_DF, file = 'output/all_genes_expression.txt')
+WriteTable(x = all_results_tidyDF, file = 'output/all_genes_expressionTidy.txt')
+
 ## make PCA info
 
 rld     <- rlogTransformation(dds_all, blind = TRUE)
