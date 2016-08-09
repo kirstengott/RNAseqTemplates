@@ -159,21 +159,69 @@ names(all.results) <- contrast_names
 ## Make a long and wide results DF
 
 all_results_tidyDF <- bind_rows(all.results)
-
 all_results_DF     <- all_results_tidyDF %>% unite(ID_all, contrastID, dea_ID) %>% spread(key = ID_all, value = dea_Value)
 
 
-WriteTable(x = all_results_DF, file = 'output/all_genes_expression.txt')
 WriteTable(x = all_results_tidyDF, file = 'output/all_genes_expressionTidy.txt')
+
+## create a table of significant genes with the cluster colors assigned
+
+sign.table <- all_results_tidyDF  %>% 
+  spread(key = dea_ID, value = dea_Value)  %>% 
+  filter(Gene %in% lfc_table$Gene) %>%
+  group_by(contrastID, Gene) %>% 
+  mutate(sortby = -log(padj, base = c(10))*sign(log2FoldChange)) %>% 
+  ungroup() %>% gather(dea_ID, dea_Value, -Gene, -contrastID) %>% 
+  unite(idAll, contrastID, dea_ID) %>% spread(key = idAll, value = dea_Value) %>%
+  dplyr::rename('TranscriptID' = Gene) %>%
+  left_join(mycolr.df)
+
+
+#Make a table that contains all of the genes in the results
+all.genes.table <- all_results_DF %>% dplyr::rename('TranscriptID' = Gene)
+
+
+WriteTable(file = paste0("./output/significant_genes.txt"), x = sign.table)    
+WriteTable(file = paste0("./output/all_genes_expression.txt"), x = all.genes.table)
+
+
+
+
 
 ## make PCA info
 
 rld     <- rlogTransformation(dds_all, blind = TRUE)
 rld_all <- mclapply(dds.res, rlogTransformation, blind = TRUE)
 
+
+
+
+## make heatmap inputs
+
+lfc_table <- all_results_tidyDF %>%
+  mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = 'yes', no = 'no')) %>% # label all significant genes
+  group_by(Gene) %>% mutate(num_sigGroup = length(which(significant == 'yes'))) %>% # label the # of times genes that are significant
+  ungroup() %>%
+  filter(num_sigGroup > 0, dea_ID == 'log2FoldChange') %>% # pull out the fold change for genes significant at least 1 time
+  select(-significant, -num_sigGroup) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
+  spread(colname, dea_Value)
+
+
+## fix the log Fold Change table so it can be clustered
+
+heatmap.input.table           <- data.frame(lfc_table)
+rownames(heatmap.input.table) <- lfc_table$Gene
+heatmap.input.table$Gene      <- NULL
+heatmap.input.table           <- na.omit(data.matrix(heatmap.input.table))
+colnames(heatmap.input.table) <- contrast_names
+
+
     
 ## Save everything we have made to Rdata files
 
 save(file = "workspace_images/counts.Rdata", list = c('counts', 'tidyCounts', 'normCounts'))
 save(file = "workspace_images/config.Rdata", list = c('title', 'workingdir', 'control', 'treatment', 'pval'))
-save(file = "workspace_images/DESeq2All.Rdata", list = c('title', 'workingdir', 'pval', 'tidyCounts', 'normCounts', 'countsData', 'contrast', 'dds_all', 'all_results_tidyDF', 'all_results_DF', 'contrast_names', 'dds.res', 'rld', 'rld_all'))
+save(file = "workspace_images/DESeq2All.Rdata", list = c('title', 'workingdir', 'pval', 'tidyCounts',
+                                                         'normCounts', 'countsData', 'contrast', 'dds_all',
+                                                         'all_results_tidyDF', 'all_results_DF', 'contrast_names',
+                                                         'dds.res', 'rld', 'rld_all', 'all_results_glmTidy', 'heatmap.input.table'))
