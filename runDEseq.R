@@ -90,16 +90,6 @@ rownames(colData) <- colData$replicate
 
 countsDataOrdered <- countsData[,rownames(colData)]
 
-## run deseq on anything (for the whole PCA plot)
-dds_all <- DESeqDataSetFromMatrix(countData = countsDataOrdered,
-                                  colData = colData,
-                                  design = ~ condition)
-
-
-
-
-
-## run the rest of the analysis
 
 
 treatment.init <- gsub(" ", "", unlist(strsplit(treatment, split = ", ")))
@@ -112,6 +102,21 @@ if(length(treatment.init) == length(control.init)){
 } else {
     message("\nNumber of controls does not equal number of treatments.  Exiting program")
 }
+
+
+
+## run deseq on anything (for the whole PCA plot)
+dds_all <- DESeqDataSetFromMatrix(countData = countsDataOrdered,
+                                  colData = colData,
+                                  design = ~ condition)
+
+
+
+
+
+## run the rest of the analysis
+
+
 
 
 
