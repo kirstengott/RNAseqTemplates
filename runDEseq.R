@@ -74,7 +74,8 @@ tpmOut  <- normCounts %>% select(ID, transcript_length, Sample, tpm) %>% spread(
 rpmOut  <- normCounts %>% select(ID, transcript_length, Sample, rpm) %>% spread(Sample, rpm)
 
 
-
+WriteTable(x = counts, file = 'output/counts.txt')
+WriteTable(x = tidyCounts, file = 'output/countsTidy.txt')
 WriteTable(x = rpkmOut, file = 'output/rpkm.txt')
 WriteTable(x = tpmOut, file = 'output/tpm.txt')
 WriteTable(x = rpmOut, file = 'output/rpm.txt')
