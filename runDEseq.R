@@ -165,6 +165,17 @@ all_results_DF     <- all_results_tidyDF %>% unite(ID_all, contrastID, dea_ID) %
 
 WriteTable(x = all_results_tidyDF, file = 'output/all_genes_expressionTidy.txt')
 
+
+
+lfc_table <- all_results_tidyDF %>%
+  mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = 'yes', no = 'no')) %>% # label all significant genes
+  group_by(Gene) %>% mutate(num_sigGroup = length(which(significant == 'yes'))) %>% # label the # of times genes that are significant
+  ungroup() %>%
+  filter(num_sigGroup > 0, dea_ID == 'log2FoldChange') %>% # pull out the fold change for genes significant at least 1 time
+  select(-significant, -num_sigGroup) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
+  spread(colname, dea_Value)
+
+
 ## create a table of significant genes with the cluster colors assigned
 
 sign.table <- all_results_tidyDF  %>% 
@@ -198,15 +209,6 @@ rld_all <- mclapply(dds.res, rlogTransformation, blind = TRUE)
 
 
 ## make heatmap inputs
-
-lfc_table <- all_results_tidyDF %>%
-  mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = 'yes', no = 'no')) %>% # label all significant genes
-  group_by(Gene) %>% mutate(num_sigGroup = length(which(significant == 'yes'))) %>% # label the # of times genes that are significant
-  ungroup() %>%
-  filter(num_sigGroup > 0, dea_ID == 'log2FoldChange') %>% # pull out the fold change for genes significant at least 1 time
-  select(-significant, -num_sigGroup) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
-  spread(colname, dea_Value)
-
 
 ## fix the log Fold Change table so it can be clustered
 
