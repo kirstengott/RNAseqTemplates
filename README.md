@@ -1,15 +1,14 @@
 ## RNAseq Analysis Templates
 
-My goal with these templates is to provide a basic pipeline for reproducible RNAseq analysis.
+My goal with these templates is to provide a basic pipeline template for reproducible analysis.
 
-There are two files:
+Files:
 
-runDEseq.R
-analysis.Rmd
+vanillaAnalysisTemplate.Rmd - basic .Rmd outline to help keep me accountable
 
-runDEseq.R creates the Rdata input for analysis.Rmd
+runDEseq.R - creates the Rdata input for analysis.Rmd
 
-analysis.Rmd creates several type of plot including:
+RNAseqAnalysis.Rmd - creates several type of plot including:
 
 -PCA plot
 -MA plot
