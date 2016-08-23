@@ -46,13 +46,13 @@ my_pallete <- c(wes_palettes$Rushmore[-2], wes_palettes$FantasticFox)
 
 ## Results
 
-```{r, results="asis", eval = FALSE}
+```{r, results="asis", eval = FALSE, echo = FALSE}
 
 pander::pandoc.table()
 
 ``` 
 
-```{r, results='asis', eval = FALSE}
+```{r, results='asis', eval = FALSE, echo = FALSE}
 
 DT::datatable()
 ```
