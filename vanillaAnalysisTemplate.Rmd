@@ -1,5 +1,5 @@
 ---
-title: "InitialAnalysis.Rmd"
+title: ""
 author: "Kirsten Gotting"
 directory: "`r getwd()`"
 date: "`r Sys.Date()`"
