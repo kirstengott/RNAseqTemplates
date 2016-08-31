@@ -5,9 +5,9 @@
 workingdir <- "" ## ?getwd()
 control    <- "" ## "control, control, control"
 treatment  <- "" ## "treatment, treatment, treatment" 
-pval       <- "" ## "0.001"
+pval       <- ## 0.001
 
-
+pval <- as.numeric(pval)
 
 setwd(workingdir)
 
@@ -173,11 +173,12 @@ WriteTable(x = all_results_tidyDF, file = 'output/all_genes_expressionTidy.txt')
 
 
 lfc_table <- all_results_tidyDF %>%
-  mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = 'yes', no = 'no')) %>% # label all significant genes
-  group_by(Gene) %>% mutate(num_sigGroup = length(which(significant == 'yes'))) %>% # label the # of times genes that are significant
-  ungroup() %>%
-  filter(num_sigGroup > 0, dea_ID == 'log2FoldChange') %>% # pull out the fold change for genes significant at least 1 time
-  select(-significant, -num_sigGroup) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
+  mutate(significant = ifelse(dea_ID == 'padj' & dea_Value <= pval, yes = TRUE, no = FALSE)) %>% # label all significant genes
+  group_by(contrastID, Gene) %>% # label the # of times genes that are significant
+  ungroup()  %>%
+  group_by(Gene) %>%
+  filter(any(significant), dea_ID == 'log2FoldChange') %>%
+  select(-significant) %>% unite(colname, contrastID, dea_ID) %>% # make the table wide formatted
   spread(colname, dea_Value)
 
 
