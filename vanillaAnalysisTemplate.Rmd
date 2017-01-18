@@ -19,12 +19,10 @@ output:
 library(knitr)
 opts_chunk$set(message=FALSE, results = 'hide', fig.keep="all", warning=FALSE, error=FALSE, fig.path="./analysis_figures/")
 
-library(dplyr)
-library(tidyr)
-library(ggplot2)
 library(wesanderson)
-library(seqinr)
+##library(seqinr)
 library(pheatmap)
+library(tidyverse)
 
 my_pallete <- c(wes_palettes$Rushmore[-2], wes_palettes$FantasticFox)
 ##Working Directory:`r getwd()`
@@ -54,7 +52,14 @@ pander::pandoc.table()
 
 ```{r, results='asis', eval = FALSE, echo = FALSE}
 
-DT::datatable()
+DT::datatable(extensions = c('Buttons', 'FixedHeader', 'Scroller'), options = list(
+    dom = 'frtBip',
+    buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+    deferRender = TRUE,
+    scrollY = 200,
+    scroller = TRUE)
+    )
+
 ```
 
 ## Commands Used {.tabset}
@@ -64,14 +69,10 @@ DT::datatable()
 ```
 
 
-## R-session information
-
-```{r session.info, results = "asis"}
-capture.output(sessionInfo())
-
-```
 
 
-## Sources
 
+## References
+
+#[R-session information](`r paste0("http://bioinfo/", gsub("/home/", "~", getwd()), "SessionInfo.txt")`)
 
