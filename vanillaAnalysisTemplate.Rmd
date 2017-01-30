@@ -71,8 +71,11 @@ DT::datatable(extensions = c('Buttons', 'FixedHeader', 'Scroller'), options = li
 
 
 
+```{r sessionInfo, echo=FALSE}
+dir.create('sessionInfo')
+writeLines(capture.output(sessionInfo()), "sessionInfo/sessionInfo1.txt")
+```
 
-## References
+#[R-session information](`r paste0("/sessionInfo/sessionInfo1.txt")`)
 
-#[R-session information](`r paste0("http://bioinfo/", gsub("/home/", "~", getwd()), "SessionInfo.txt")`)
 

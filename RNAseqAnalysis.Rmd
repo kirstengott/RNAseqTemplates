@@ -1,5 +1,5 @@
 ---
-title: "Mnemiopsis leidyi - 2hpa All Replicates" 
+title: "" 
 author: "Kirsten Gotting"
 date: "`r Sys.Date()`"
 output:
@@ -138,15 +138,25 @@ pca_data <- pcaData(rld)
 pca_rot <- data.frame(pca_data$rotation, Sample = rownames(pca_data$rotation), Condition = sub("_.*", "", rownames(pca_data$rotation)))
 
 ggplot(data = pca_rot, aes(x = PC1, y = PC2, label = Sample, colour = factor(Condition))) +
-          geom_point(size = 1) + theme_bw() + geom_text(hjust = 0, vjust = 0, size = 3) +
-          xlab("PC 1") + ylab("PC 2") + ggtitle('All Samples PCA') + 
-          theme(legend.position="none") + scale_x_continuous(expand = c(0.2, 0)) 
+  geom_point(size = 1) + 
+  theme_bw() + 
+  geom_text(hjust = 0, vjust = 0, size = 3) +
+  xlab("PC 1") + 
+  ylab("PC 2") + 
+  ggtitle('All Samples PCA') + 
+  theme(legend.position="none") + 
+  scale_x_continuous(expand = c(0.2, 0)) 
 
 
 ggplot(data = pca_rot, aes(x = PC2, y = PC3, label = Sample, colour = factor(Condition))) +
-          geom_point(size = 1) + theme_bw() + geom_text(hjust = 0, vjust = 0, size = 3) +
-          xlab("PC 2") + ylab("PC 3") + ggtitle('All Samples PCA') + 
-          theme(legend.position="none") + scale_x_continuous(expand = c(0.2, 0)) 
+  geom_point(size = 1) + 
+  theme_bw() + 
+  geom_text(hjust = 0, vjust = 0, size = 3) +
+  xlab("PC 2") + 
+  ylab("PC 3") + 
+  ggtitle('All Samples PCA') + 
+  theme(legend.position="none") + 
+  scale_x_continuous(expand = c(0.2, 0)) 
 
 
 importance <- data.frame(Metric = rownames(summary(pca_data)$importance), summary(pca_data)$importance, row.names = NULL)
@@ -159,7 +169,12 @@ importanceDF <- gather(importance, Component, Value, -Metric) %>% filter(Metric 
 
 importanceDF$Component  <- factor(importanceDF$Component, levels = importanceDF$Component)
 
-ggplot(importanceDF, aes(y = Value, x = Component)) + geom_bar(stat = 'identity', fill = 'purple') + theme_bw() + theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle('Principle Component Proportion of Variance') + ylab('Proportion of Variance')
+ggplot(importanceDF, aes(y = Value, x = Component)) + 
+  geom_bar(stat = 'identity', fill = 'purple') + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  ggtitle('Principle Component Proportion of Variance') + 
+  ylab('Proportion of Variance')
 
 
 
@@ -181,10 +196,14 @@ DT::datatable(importance[,1:11])
 individ.pcas <- lapply(contrast_names, function(x){
       pca_data   <- plotPCA(rld_all[[x]], returnData = TRUE, ntop = 10000)
       ggplot(data = pca_data, aes(x = PC1, y = PC2, label = name, colour = factor(condition))) +
-            geom_point(size = 3) + theme_bw() + geom_text(hjust = 0, vjust = -0.4) +
-            xlab("PC 1") + ylab("PC 2") + ggtitle(x) + 
-            scale_x_continuous(expand = c(0.3, 0))  +
-            theme(legend.position="none") 
+        geom_point(size = 3) + 
+        theme_bw() + 
+        geom_text(hjust = 0, vjust = -0.4) +
+        xlab("PC 1") +
+        ylab("PC 2") + 
+        ggtitle(x) + 
+        scale_x_continuous(expand = c(0.3, 0))  +
+        theme(legend.position="none") 
 })
 
 print(individ.pcas)
@@ -205,9 +224,6 @@ Volcano plot: The log2 fold change(M) plotted against the -log10 (eg. 1e^-10 = 1
 ```{r pairwisePlots, fig.keep = "all", dev = "png", fig.height = 10, fig.width = 20}
 
 ##MA plots
-
-library('gridExtra')
-library('grid')
 
 ##The log2 fold change(M) plotted against the log2 average(A) of the normalized read count for each gene.  Significantly differentially expressed genes are plotted in red.
 
@@ -294,7 +310,20 @@ mycolr.df <- data.frame(Cluster_Color = mycolr, TranscriptID = names(myclr)) # c
 if(ncol(heatmap.input.table) > 1){
     ## Make a heatmap without a column dendrogram
     col.breaks    <- seq(-3, 3, length.out = ncol(heatmap.input.table))
-    heatmap       <- heatmap.2(heatmap.input.table, margin = c(15,5), col = prettycolors, dendrogram = 'row', trace = c("none"), Rowv=as.dendrogram(hr), Colv = NA, labRow = FALSE, key = TRUE, breaks = col.breaks, key.ylab = "Gene Count", key.xlab = "log2FoldChange", cexCol = 1.5, RowSideColors = mycolr)
+    heatmap       <- heatmap.2(heatmap.input.table,
+                               margin = c(15,5), 
+                               col = prettycolors, 
+                               dendrogram = 'row', 
+                               trace = c("none"), 
+                               Rowv=as.dendrogram(hr), 
+                               Colv = NA, 
+                               labRow = FALSE, 
+                               key = TRUE, 
+                               breaks = col.breaks, 
+                               key.ylab = "Gene Count", 
+                               key.xlab = "log2FoldChange", 
+                               cexCol = 1.5, 
+                               RowSideColors = mycolr)
     title(main = paste0("Clustering of ", nrow(heatmap.input.table)," Genes"), line = 0)
     par(cex.main=0.9)
 }
@@ -306,7 +335,22 @@ if(ncol(heatmap.input.table) > 2) {
     mycolc <- c("Green", "Red", "Blue", "Orange", "Purple")
     mycolc <- mycolc[as.vector(myclc)]
     ## Make a heatmap of the logfold changes with column dendrogram.
-    heatmap       <- heatmap.2(heatmap.input.table, margin = c(15,5), dendrogram = 'both', Rowv = as.dendrogram(hr), Colv = as.dendrogram(hc), col = prettycolors, trace = c("none"), labRow = FALSE, key = TRUE, breaks = col.breaks, main = paste0("Clustering of Timepoints on ", nrow(heatmap.input.table)," Genes"), key.ylab = "Gene Count", key.xlab = "log2FoldChange", cexCol = 1.5, RowSideColors = mycolr, ColSideColors = mycolc)
+    heatmap       <- heatmap.2(heatmap.input.table, 
+                               margin = c(15,5), 
+                               dendrogram = 'both', 
+                               Rowv = as.dendrogram(hr), 
+                               Colv = as.dendrogram(hc), 
+                               col = prettycolors, 
+                               trace = c("none"), 
+                               labRow = FALSE, 
+                               key = TRUE, 
+                               breaks = col.breaks, 
+                               main = paste0("Clustering of Timepoints on ", nrow(heatmap.input.table)," Genes"), 
+                               key.ylab = "Gene Count", 
+                               key.xlab = "log2FoldChange", 
+                               cexCol = 1.5, 
+                               RowSideColors = mycolr, 
+                               ColSideColors = mycolc)
 }
 
 ```
@@ -335,12 +379,9 @@ Volcano plot: The log2 fold change(M) plotted against the -log10 (eg. 1e^-10 = 1
 
 ##MA plots
 
-library('gridExtra')
-library('grid')
+
 
 ##The log2 fold change(M) plotted against the log2 average(A) of the normalized read count for each gene.  Significantly differentially expressed genes are plotted in red.
-
-##x <- contrast_names[1]
 
 ## make MA and Volcano plots
 
@@ -439,9 +480,10 @@ if(ncol(heatmap.input.table) > 2) {
 ```
 
 
-## R-session information
-
-```{r session.info, results = "asis"}
-capture.output(sessionInfo())
-
+```{r sessionInfo, echo=FALSE}
+dir.create('sessionInfo')
+writeLines(capture.output(sessionInfo()), "sessionInfo/QCsessionInfo.txt")
 ```
+
+#[R-session information](`r paste0("/sessionInfo/QCsessionInfo.txt")`)
+
