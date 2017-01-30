@@ -43,6 +43,6 @@ dplyr
 
 tidyr
 
-kiRsten (available [here](https://github.com/kirstengott/kiRsten)
+kiRsten (available [here](https://github.com/kirstengott/kiRsten) )
 
 knitr
