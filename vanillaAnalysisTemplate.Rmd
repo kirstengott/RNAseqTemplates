@@ -69,6 +69,12 @@ DT::datatable(extensions = c('Buttons', 'FixedHeader', 'Scroller'), options = li
 ```
 
 
+## Scripts
+
+
+```{r, code = readLines('code.R'), eval = FALSE}
+
+```
 
 
 ```{r sessionInfo, echo=FALSE}
